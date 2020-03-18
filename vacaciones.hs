@@ -1,3 +1,4 @@
+-- Esta función ya se la damos
 deltaSegun :: (a -> Int) -> a -> a -> Int
 deltaSegun f algo1 algo2 = f algo1 - f algo2
 
