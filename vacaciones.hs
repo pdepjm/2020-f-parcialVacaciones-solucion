@@ -10,85 +10,62 @@ data Turista = Turista
   , stress    :: Int
   , solitario :: Bool
   , idiomas   :: [Idioma]
-  }
+  } deriving Show
 
-anto =
-  Turista
-    { cansancio = 10
-    , stress = 15
-    , solitario = True
-    , idiomas = ["español", "inglés"]
-    }
+-- TODO: Cambiar
+ana :: Turista
+ana =
+  Turista { cansancio = 10 , stress = 15, solitario = True, idiomas = ["español", "inglés"] }
 
+beto :: Turista
 beto =
-  Turista
-    {cansancio = 10, stress = 15, solitario = False, idiomas = ["español"]}
+  Turista { cansancio = 10, stress = 15, solitario = False, idiomas = ["español"] }
 
+cathi :: Turista
 cathi =
-  Turista
-    {cansancio = 10, stress = 15, solitario = False, idiomas = ["italiano"]}
+  Turista { cansancio = 10, stress = 15, solitario = False, idiomas = ["italiano"] }
 
 --
 cambiarStress delta turista = turista {stress = stress turista + delta}
 
 cambiarStressPorcentual porciento turista =
-  cambiarStress ((div porciento 100) * stress turista) turista
+  cambiarStress (div (porciento * stress turista) 100) turista
 
 cambiarCansancio delta turista = turista {cansancio = cansancio turista + delta}
 
 aprenderIdioma idioma turista = turista {idiomas = idioma : idiomas turista}
 
+acompaniado turista = turista {solitario = False}
+
 -- 2)
-type Actividad = Turista -> Turista
+type Excursion = Turista -> Turista
 
-surf :: Actividad
-surf = cambiarCansancio 10
-
-fistaEnBarco :: Actividad
-fistaEnBarco turista = turista {solitario = False}
-
-playa :: Actividad
+playa :: Excursion
 playa turista
   | solitario turista = cambiarCansancio (-5) turista
   | otherwise = cambiarStress (-1) turista
 
-conocerGente :: Idioma -> Actividad
-conocerGente = aprenderIdioma
-
-apreciar :: String -> Actividad
+apreciar :: String -> Excursion
 apreciar algo = cambiarStress (-length algo)
 
-caminar :: Int -> Actividad
-caminar mins = cambiarCansancio (div mins 4)
+salirConGente :: Idioma -> Excursion
+salirConGente idioma = acompaniado . aprenderIdioma idioma
+
+caminar :: Int -> Excursion
+caminar mins = cambiarStress (-intensidad mins) . cambiarCansancio (intensidad mins)
+
+intensidad mins = div mins 4
 
 data Marea
   = Tranquila
   | Moderada
   | Fuerte
 
-paseoEnBarco :: Marea -> Actividad
-paseoEnBarco Tranquila = fistaEnBarco
+paseoEnBarco :: Marea -> Excursion
+paseoEnBarco Tranquila = acompaniado
 paseoEnBarco Moderada  = id
-paseoEnBarco Fuerte    = cambiarStress 6
+paseoEnBarco Fuerte    = cambiarCansancio 10 . cambiarStress 6
 
--- 3)
-type Excursion = Turista -> Turista
-
-playaCercana :: Excursion
-playaCercana = playa . caminar 10
-
-cascada :: Excursion
-cascada = playa . caminar 20 . apreciar "cascada" . caminar 40
-
-recorridoInternacional :: Idioma -> Excursion
-recorridoInternacional idioma =
-  apreciar "lago" . caminar 60 . conocerGente idioma
-
-playaEscondida :: Marea -> Excursion
-playaEscondida marea = surf . paseoEnBarco marea
-
-islaVecina :: Excursion -> Excursion
-islaVecina excursion = excursion . paseoEnBarco Tranquila
 
 -- a)
 hacerExcursion :: Excursion -> Turista -> Turista
@@ -100,31 +77,35 @@ deltaExcursionSegun f turista excursion =
   deltaSegun f (hacerExcursion excursion turista) turista
 
 -- c)
-leGustaExcursionAAnto :: Excursion -> Bool
-leGustaExcursionAAnto = (< 10) . deltaExcursionSegun stress anto
+esEducativa :: Turista -> Excursion -> Bool
+esEducativa turista = (> 0) . deltaExcursionSegun (length . idiomas) turista 
 
-leGustaExcursionABeto :: Excursion -> Bool
-leGustaExcursionABeto = (> 0) . deltaExcursionSegun (length . idiomas) beto
+excursionesDesestresantes :: Turista -> [Excursion] -> [Excursion]
+excursionesDesestresantes turista = filter (esDesestresante turista)
 
--- 4)
-type Tour = [Actividad]
+esDesestresante :: Turista -> Excursion -> Bool
+esDesestresante turista = (<= -3) . deltaExcursionSegun stress turista
+
+
+-- 3)
+type Tour = [Excursion]
 
 completo :: Tour
-completo = [playaCercana, cascada, recorridoInternacional "francés"]
+completo = [caminar 20, apreciar "cascada", caminar 40, playa, salidaLocal]
 
-playas :: Int -> Tour
-playas = flip replicate playaCercana
+ladoB :: Excursion -> Tour
+ladoB excursion = [paseoEnBarco Tranquila, excursion, caminar 120]
 
-exterior :: Marea -> Tour
-exterior mareaVecina = [islaVecina (excursionSegun mareaVecina), playaCercana]
-
-eternidad :: Tour
-eternidad = repeat (recorridoInternacional "francés")
+islaVecina :: Marea -> Tour
+islaVecina mareaVecina = [paseoEnBarco mareaVecina, excursionEnIslaVecina mareaVecina, paseoEnBarco mareaVecina]
 
 --
-excursionSegun :: Marea -> Excursion
-excursionSegun Fuerte = cascada
-excursionSegun marea  = playaEscondida marea
+excursionEnIslaVecina :: Marea -> Excursion
+excursionEnIslaVecina Fuerte = apreciar "lago"
+excursionEnIslaVecina _  = playa
+
+salidaLocal :: Excursion
+salidaLocal = salirConGente "melmacquiano"
 
 -- a)
 hacerTour :: Turista -> Tour -> Turista
@@ -132,14 +113,31 @@ hacerTour turista tour =
   foldl (flip hacerExcursion) (cambiarStress (length tour) turista) tour
 
 -- b)
-leGustaTourAAnto :: Tour -> Bool
-leGustaTourAAnto = all leGustaExcursionAAnto
+propuestaConvincente :: Turista -> [Tour] -> Bool
+propuestaConvincente turista = any (esConvincente turista)
 
-leGustaTourABeto :: Tour -> Bool
-leGustaTourABeto tour =
-  any leGustaExcursionABeto tour || terminaMenosStressado beto tour
+esConvincente :: Turista -> Tour -> Bool
+esConvincente turista = any (dejaAcompaniado turista) . excursionesDesestresantes turista
 
---
-terminaMenosStressado :: Turista -> Tour -> Bool
-terminaMenosStressado turista tour =
-  deltaSegun cansancio (hacerTour turista tour) turista < 0
+dejaAcompaniado :: Turista -> Excursion -> Bool
+dejaAcompaniado turista = not . solitario . flip hacerExcursion turista
+
+-- c)
+efectividad :: Tour -> [Turista] -> Int
+efectividad tour = sum . map (espiritualidadAportada tour) . filter (flip esConvincente tour)
+
+espiritualidadAportada :: Tour -> Turista -> Int
+espiritualidadAportada tour = negate . deltaRutina tour
+
+deltaRutina :: Tour -> Turista -> Int
+deltaRutina tour turista =
+  deltaSegun nivelDeRutina (hacerTour turista tour) turista
+
+nivelDeRutina :: Turista -> Int
+nivelDeRutina turista = cansancio turista + stress turista
+
+
+-- 4)
+
+playasEternas :: Tour
+playasEternas = salidaLocal : repeat playa
