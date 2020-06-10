@@ -15,15 +15,15 @@ data Turista = Turista
 -- TODO: Cambiar
 ana :: Turista
 ana =
-  Turista { cansancio = 10 , stress = 15, solitario = True, idiomas = ["español", "inglés"] }
+  Turista { cansancio = 0 , stress = 20, solitario = False, idiomas = ["espaniol"] }
 
 beto :: Turista
 beto =
-  Turista { cansancio = 10, stress = 15, solitario = False, idiomas = ["español"] }
+  Turista { cansancio = 15, stress = 15, solitario = True, idiomas = ["aleman"] }
 
 cathi :: Turista
 cathi =
-  Turista { cansancio = 10, stress = 15, solitario = False, idiomas = ["italiano"] }
+  Turista { cansancio = 15, stress = 15, solitario = True, idiomas = ["aleman", "catalan"] }
 
 --
 cambiarStress delta turista = turista {stress = stress turista + delta}
@@ -138,6 +138,17 @@ nivelDeRutina turista = cansancio turista + stress turista
 
 
 -- 4)
-
+-- a)
 playasEternas :: Tour
 playasEternas = salidaLocal : repeat playa
+
+-- b)
+{-
+Para Ana sí porque la primer actividad ya es desestresante y siempre está acompañada.
+Con Beto no se cumple ninguna de las 2 condiciones y el algoritmo diverge.
+-}
+
+-- c)
+{-
+No, solamente funciona para el caso que se consulte con una lista vacía de turista, que dará siempre 0.
+-}
