@@ -15,7 +15,7 @@ data Turista = Turista
 -- TODO: Cambiar
 ana :: Turista
 ana =
-  Turista { cansancio = 0 , stress = 20, solitario = False, idiomas = ["espaniol"] }
+  Turista { cansancio = 0 , stress = 21, solitario = False, idiomas = ["espaniol"] }
 
 beto :: Turista
 beto =
@@ -26,15 +26,20 @@ cathi =
   Turista { cansancio = 15, stress = 15, solitario = True, idiomas = ["aleman", "catalan"] }
 
 --
+cambiarStress :: Int -> Turista -> Turista
 cambiarStress delta turista = turista {stress = stress turista + delta}
 
+cambiarStressPorcentual :: Int -> Turista -> Turista
 cambiarStressPorcentual porciento turista =
   cambiarStress (div (porciento * stress turista) 100) turista
 
+cambiarCansancio :: Int -> Turista -> Turista 
 cambiarCansancio delta turista = turista {cansancio = cansancio turista + delta}
 
+aprenderIdioma :: Idioma -> Turista -> Turista
 aprenderIdioma idioma turista = turista {idiomas = idioma : idiomas turista}
 
+acompaniado :: Turista -> Turista
 acompaniado turista = turista {solitario = False}
 
 -- 2)
@@ -54,6 +59,7 @@ salirConGente idioma = acompaniado . aprenderIdioma idioma
 caminar :: Int -> Excursion
 caminar mins = cambiarStress (-intensidad mins) . cambiarCansancio (intensidad mins)
 
+intensidad :: Int -> Int
 intensidad mins = div mins 4
 
 data Marea
@@ -62,7 +68,7 @@ data Marea
   | Fuerte
 
 paseoEnBarco :: Marea -> Excursion
-paseoEnBarco Tranquila = acompaniado
+paseoEnBarco Tranquila = salirConGente "aleman" . apreciar "mar" . caminar 10
 paseoEnBarco Moderada  = id
 paseoEnBarco Fuerte    = cambiarCansancio 10 . cambiarStress 6
 
